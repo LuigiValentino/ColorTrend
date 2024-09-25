@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ColorTrends</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+  <div class="container mx-auto p-4 mt-12">
+    <h1 class="text-3xl text-center mb-4">ColorTrends Palettes </h1> 
+    <p class="text-center mb-6">Busca paletas dentro de nuestra libreria creado por nuestros usuarios o crea la tuya para compartirlas entre programadores!!</p>
+    <hr class="bg-slate-400">
+    <br>
+    <div class="text-center mb-4 flex items-center">
+        <input type="text" id="search" placeholder="Buscar por nombre de paleta o código hexadecimal" class="w-full p-2 border border-gray-300 rounded mr-2 h-10" style="border-color: #333; border-width: 1px;">
+        <a href="/create" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded h-10 flex ">Crear</a>
+      </div>
+      
+      
+    <div id="palette-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </div>
+  <hr>
+  <footer class="text-center text-gray-600">
+    <p>- <a href="https://luigiadducci.netlify.app">Luigi Adducci</a> - &copy;2024 -</p>
+  </footer>
+
+  <script>
+    let palettes = [];
+
+    document.getElementById('search').addEventListener('input', function () {
+      const query = this.value.toLowerCase();
+      const filteredPalettes = palettes.filter(palette => 
+        palette.name.toLowerCase().includes(query) || 
+        palette.colors.some(color => color.toLowerCase().includes(query))
+      );
+      displayPalettes(filteredPalettes);
+    });
+
+    async function fetchPalettes() {
+      const response = await fetch('/api/palettes');
+      palettes = await response.json();
+      displayPalettes(palettes);
+    }
+
+    function displayPalettes(palettes) {
+      const paletteList = document.getElementById('palette-list');
+      paletteList.innerHTML = '';
+
+      palettes.forEach(palette => {
+        const paletteDiv = document.createElement('div');
+        paletteDiv.className = 'palette bg-white p-4 rounded shadow-md transition duration-300 hover:shadow-lg';
+        paletteDiv.innerHTML = `
+          <h3 class="text-xl mb-2">${palette.name}</h3>
+          <p class="text-sm text-gray-600 mb-2">Created by: ${palette.createdBy}</p>
+          <div class="colors grid grid-cols-${palette.colors.length} gap-1 mb-2">
+            ${palette.colors.map(color => `
+              <div class="color relative h-16 rounded" style="background-color: ${color};">
+                <span class="absolute bottom-1 left-1 text-xs text-white bg-black bg-opacity-50 rounded px-1 opacity-0 transition duration-300 hover:opacity-100">${color}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="flex justify-between">
+            <button onclick="likePalette('${palette._id}')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+              <i class="fa fa-heart"></i> ${palette.likes}
+            </button>
+            <div class="dropdown inline-block relative">
+              <button class=" text-gray-500 font-bold py-2 px-4 rounded">
+                <i class="fa fa-copy"></i> Copy
+              </button>
+              <ul class="dropdown-menu absolute hidden text-gray-700 pt-1">
+                <li class=""><button onclick="copyHexcodes('${palette.colors.join(', ')}')" class="bg-gray-200 hover:bg-gray-400 py-2 px-4 block whitespace-no-wrap">Hex</button></li>
+                <li class=""><button onclick="copyRootVars('${palette.colors.map((color, index) => `--color${index + 1}: ${color}`).join('; ')}')" class="bg-gray-200 hover:bg-gray-400 py-2 px-4 block whitespace-no-wrap">Root</button></li>
+              </ul>
+            </div>
+          </div>
+        `;
+        paletteList.appendChild(paletteDiv);
+      });
+
+      document.querySelectorAll('.dropdown').forEach(dropdown => {
+        dropdown.addEventListener('click', function () {
+          this.querySelector('.dropdown-menu').classList.toggle('hidden');
+        });
+      });
+    }
+
+    async function likePalette(id) {
+      await fetch(`/api/palettes/${id}/like`, { method: 'PUT' });
+      fetchPalettes();
+    }
+
+    function copyHexcodes(hexes) {
+      navigator.clipboard.writeText(hexes);
+      alert('Hexcodes copiado');
+    }
+
+    function copyRootVars(vars) {
+      navigator.clipboard.writeText(vars);
+      alert('Root var copiado');
+    }
+
+    function copyRgb(rgb) {
+      navigator.clipboard.writeText(rgb);
+      alert('RGB values copied to clipboard');
+    }
+
+    function copyRgba(rgba) {
+      navigator.clipboard.writeText(rgba);
+      alert('RGBA values copied to clipboard');
+    }
+
+    function hexToRgb(hex) {
+      let r = 0, g = 0, b = 0;
+      if (hex.length === 4) {
+        r = parseInt(hex[1] + hex[1], 16);
+        g = parseInt(hex[2] + hex[2], 16);
+        b = parseInt(hex[3] + hex[3], 16);
+      } else if (hex.length === 7) {
+        r = parseInt(hex[1] + hex[2], 16);
+        g = parseInt(hex[3] + hex[4], 16);
+        b = parseInt(hex[5] + hex[6], 16);
+      }
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function hexToRgba(hex, alpha = 1) {
+      let r = 0, g = 0, b = 0;
+      if (hex.length === 4) {
+        r = parseInt(hex[1] + hex[1], 16);
+        g = parseInt(hex[2] + hex[2], 16);
+        b = parseInt(hex[3] + hex[3], 16);
+      } else if (hex.length === 7) {
+        r = parseInt(hex[1] + hex[2], 16);
+        g = parseInt(hex[3] + hex[4], 16);
+        b = parseInt(hex[5] + hex[6], 16);
+      }
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    fetchPalettes();
+  </script>
+</body>
+</html>

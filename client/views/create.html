@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ColorTrends - Crear</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .tab-content.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+  <a href="/" class="text-gray-600 font-bold py-2 px-3 rounded mt-4 ml-4"> <i class="fa-solid fa-arrow-left"></i> Volver a Paletas </a>
+
+  <div class="container mx-auto p-4 mt-12 max-w-lg">
+    
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-3xl">Crear una Nueva Paleta</h1>
+    </div>
+    <form id="create-palette-form" class="bg-white p-6 rounded shadow-md">
+      <div class="mb-4">
+        <input type="text" id="name" placeholder="Nombre de la Paleta" required class="w-full p-2 border border-gray-300 rounded">
+      </div>
+      <div class="mb-4">
+        <input type="text" id="username" placeholder="Tu Nombre" required class="w-full p-2 border border-gray-300 rounded">
+      </div>
+      <div class="mb-4">
+        <div class="tabs">
+          <button type="button" id="manual-tab" class="tab active" onclick="showManual()">Manual</button>
+          <button type="button" id="auto-tab" class="tab" onclick="showAuto()">Automático</button>
+        </div>
+      </div>
+      <div id="manual" class="tab-content">
+        <div id="colors" class="mb-4 space-y-2">
+          <input type="color" value="#ffffff" required class="w-full p-2 border border-gray-300 rounded w-full">
+        </div>
+        <div class="mb-4 text-center">
+          <button type="button" onclick="addColor()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"><i class="fa fa-plus"></i> Añadir Color</button>
+        </div>
+      </div>
+      <div id="automatic" class="tab-content hidden">
+        <textarea id="colors-text" placeholder="Introduce los colores separados por comas (e.g. #ffffff, #000000)" class="w-full p-2 border border-gray-300 rounded"></textarea>
+      </div>
+      <div class="text-center">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Guardar Paleta</button>
+      </div>
+    </form>
+  </div>
+  <hr>
+  <footer class="text-center text-gray-600 mt-4">
+    <p>- <a href="https://luigiadducci.netlify.app">Luigi Adducci</a> - &copy;2024 -</p>
+  </footer>
+  <script>
+    function showManual() {
+      document.getElementById('manual').classList.remove('hidden');
+      document.getElementById('automatic').classList.add('hidden');
+      document.getElementById('manual-tab').classList.add('active');
+      document.getElementById('auto-tab').classList.remove('active');
+    }
+
+    function showAuto() {
+      document.getElementById('manual').classList.add('hidden');
+      document.getElementById('automatic').classList.remove('hidden');
+      document.getElementById('manual-tab').classList.remove('active');
+      document.getElementById('auto-tab').classList.add('active');
+    }
+
+    function addColor() {
+      const colorsDiv = document.getElementById('colors');
+      const input = document.createElement('input');
+      input.type = 'color';
+      input.value = '#ffffff';
+      input.required = true;
+      input.className = 'w-full p-2 border border-gray-300 rounded';
+      colorsDiv.appendChild(input);
+    }
+
+    document.getElementById('create-palette-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const name = document.getElementById('name').value;
+      const username = document.getElementById('username').value;
+
+      let colors = [];
+      if (!document.getElementById('automatic').classList.contains('hidden')) {
+        const colorsText = document.getElementById('colors-text').value;
+        if (colorsText.trim()) {
+          colors = colorsText.split(',').map(color => color.trim());
+        }
+      } else {
+        colors = Array.from(document.querySelectorAll('#colors input')).map(input => input.value);
+      }
+
+      await fetch('/api/palettes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, colors, createdBy: username })
+      });
+
+      window.location.href = '/';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      showManual(); 
+    });
+  </script>
+</body>
+</html>
